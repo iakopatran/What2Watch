@@ -29,38 +29,56 @@ function withReason(
   }
 }
 
+function combineContributions(
+  contributions: ScoreContribution[],
+): ScoreContribution {
+  return {
+    points: contributions.reduce(
+      (total, contribution) => total + contribution.points,
+      0,
+    ),
+    reasons: contributions.flatMap((contribution) => contribution.reasons),
+  }
+}
+
 export function scoreMoodMatch(
   anime: CandidateAnime,
   preferences: RecommendationPreferences,
 ): ScoreContribution {
   const signals = moodSignals[preferences.mood]
+  const contributions: ScoreContribution[] = []
+  const matchedGenre = signals.preferredGenres.find((genre) =>
+    anime.genres.includes(genre),
+  )
 
-  // TODO: Award points when genres or tags overlap with `signals`.
-  // Hint: start with one simple genre match rule before checking tags.
-  // Example return shape:
-  // return withReason(20, 'mood', 'Matches your hype mood')
-  const matchedGenre = signals.preferredGenres.find((genre) => anime.genres.includes(genre))
   if (matchedGenre) {
-    return withReason(
-      15,
-      'mood',
-      `Fits your ${preferences.mood} mood through ${matchedGenre}.`,
+    contributions.push(
+      withReason(
+        18,
+        'mood',
+        `Fits your ${preferences.mood} mood through ${matchedGenre}.`,
+      ),
     )
   }
 
   const matchedTag = signals.preferredTags.find((preferredTag) =>
-    anime.tags.some((animeTag) => animeTag.name === preferredTag)
+    anime.tags.some(
+      (animeTag) =>
+        animeTag.name === preferredTag && !animeTag.isMediaSpoiler,
+    ),
   )
 
   if (matchedTag) {
-    return withReason(
-      10,
-      'mood',
-      `Fits your ${preferences.mood} mood through ${matchedTag}.`,
+    contributions.push(
+      withReason(
+        8,
+        'mood',
+        `Includes the ${matchedTag} theme associated with ${preferences.mood}.`,
+      ),
     )
   }
 
-  return noContribution()
+  return combineContributions(contributions)
 }
 
 export function scoreTimeCommitment(
@@ -69,12 +87,28 @@ export function scoreTimeCommitment(
 ): ScoreContribution {
   const rule = timeCommitmentRules[preferences.timeCommitment]
 
-  // TODO: Compare `anime.format` and `anime.episodes` with `rule`.
-  // Remember that AniList may provide `null` for an unknown episode count.
-  void anime
-  void rule
+  if (preferences.timeCommitment === 'movie') {
+    return anime.format === 'MOVIE'
+      ? withReason(18, 'timeCommitment', 'A movie-length pick for tonight.')
+      : noContribution()
+  }
 
-  return noContribution()
+  if (anime.episodes === null || !rule.episodes) {
+    return noContribution()
+  }
+
+  const fitsMinimum =
+    rule.episodes.min === undefined || anime.episodes >= rule.episodes.min
+  const fitsMaximum =
+    rule.episodes.max === undefined || anime.episodes <= rule.episodes.max
+
+  return fitsMinimum && fitsMaximum
+    ? withReason(
+        14,
+        'timeCommitment',
+        `Fits your ${preferences.timeCommitment} watch window at ${anime.episodes} episodes.`,
+      )
+    : noContribution()
 }
 
 export function scoreDiscoveryStyle(
@@ -83,10 +117,31 @@ export function scoreDiscoveryStyle(
 ): ScoreContribution {
   const rule = discoveryStyleRules[preferences.discoveryStyle]
 
-  // TODO: Reward popularity, rating, or lower popularity based on `rule`.
-  // Keep `surpriseMe` deterministic for now; it can simply add no points.
-  void anime
-  void rule
+  if (
+    preferences.discoveryStyle === 'popular' &&
+    anime.popularity !== null &&
+    anime.popularity >= 30000
+  ) {
+    return withReason(12, 'discoveryStyle', 'A widely watched audience favorite.')
+  }
+
+  if (
+    preferences.discoveryStyle === 'highRated' &&
+    anime.averageScore !== null &&
+    anime.averageScore >= (rule.minimumAverageScore ?? 75)
+  ) {
+    return withReason(14, 'discoveryStyle', 'Meets your high-rated preference.')
+  }
+
+  if (
+    preferences.discoveryStyle === 'hiddenGem' &&
+    anime.averageScore !== null &&
+    anime.averageScore >= (rule.minimumAverageScore ?? 68) &&
+    anime.popularity !== null &&
+    anime.popularity < 30000
+  ) {
+    return withReason(16, 'discoveryStyle', 'A well-rated, less-seen find.')
+  }
 
   return noContribution()
 }
@@ -95,10 +150,11 @@ export function scoreIncludedGenres(
   anime: CandidateAnime,
   preferences: RecommendationPreferences,
 ): ScoreContribution {
+  const matchedGenre = preferences.includeGenres.find((genre) =>
+    anime.genres.includes(genre),
+  )
 
-  const matchedGenre = preferences.includeGenres.find((genre) => anime.genres.includes(genre))
-
-  if(!matchedGenre ) {
+  if (!matchedGenre) {
     return noContribution()
   }
 
@@ -113,15 +169,16 @@ export function scoreAvoidedGenres(
   anime: CandidateAnime,
   preferences: RecommendationPreferences,
 ): ScoreContribution {
+  const matchedGenre = preferences.avoidGenres.find((genre) =>
+    anime.genres.includes(genre),
+  )
 
-  const matchedGenre = preferences.avoidGenres.find((genre) => anime.genres.includes(genre))
-
-  if(!matchedGenre){
+  if (!matchedGenre) {
     return noContribution()
   }
 
   return withReason(
-    -40,
+    -50,
     'avoidedGenre',
     `Contains an avoided genre: ${matchedGenre}.`,
   )
@@ -131,32 +188,35 @@ export function scoreAvoidedTags(
   anime: CandidateAnime,
   preferences: RecommendationPreferences,
 ): ScoreContribution {
-
   const matchedTag = preferences.avoidTags.find((avoidTag) =>
-    anime.tags.some((animeTag) => animeTag.name === avoidTag))
+    anime.tags.some((animeTag) => animeTag.name === avoidTag),
+  )
 
-  if(!matchedTag){
+  if (!matchedTag) {
     return noContribution()
   }
 
   return withReason(
-    -25,
+    -50,
     'avoidedTag',
     `Contains an avoided tag: ${matchedTag}.`,
   )
-
 }
 
 export function scoreQuality(
   anime: CandidateAnime,
-  preferences: RecommendationPreferences,
 ): ScoreContribution {
-  // TODO: Decide whether every recommendation receives a small score bonus
-  // for quality, or whether quality is handled only by discovery style.
-  void anime
-  void preferences
+  if (anime.averageScore === null) {
+    return noContribution()
+  }
 
-  return noContribution()
+  if (anime.averageScore >= 80) {
+    return withReason(8, 'quality', 'Strong AniList community score.')
+  }
+
+  return anime.averageScore >= 70
+    ? withReason(4, 'quality', 'Solid AniList community score.')
+    : noContribution()
 }
 
 export function scoreAnime(
@@ -170,7 +230,7 @@ export function scoreAnime(
     scoreIncludedGenres(anime, preferences),
     scoreAvoidedGenres(anime, preferences),
     scoreAvoidedTags(anime, preferences),
-    scoreQuality(anime, preferences),
+    scoreQuality(anime),
   ]
 
   return {

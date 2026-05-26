@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# What2Watch
 
-## Getting Started
+What2Watch is an anime discovery app built with Next.js, React, TypeScript,
+TanStack Query, Tailwind CSS, and the AniList GraphQL API.
 
-First, run the development server:
+## MVP
+
+- Questionnaire-driven Discover page with mood, time, discovery style, genre,
+  and content-avoidance preferences.
+- Deterministic recommendation scoring with visible match reasons.
+- Ranked AniList results with save-to-watchlist actions.
+- Watchlist grid and detail view backed by browser storage for the current
+  frontend milestone.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Validation:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
+## Recommendation Flow
 
-To learn more about Next.js, take a look at the following resources:
+```txt
+RecommendationPreferences
+-> buildQueryVariables()
+-> fetchCandidateAnime() through /api/anilist
+-> scoreAnime()
+-> rankAnime()
+-> RecommendationResults
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Candidate retrieval stays broad. The local scoring layer ranks candidates using
+mood matches, watch-time fit, discovery style, preferred genres, avoided
+genres/tags, and community score.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## PHP, MySQL, And AWS Plan
 
-## Deploy on Vercel
+The next integration milestone replaces browser watchlist storage with one-user
+server persistence:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```txt
+Next.js frontend
+-> PHP JSON endpoint hosted on AWS Lightsail LAMP
+-> MariaDB/MySQL watchlist table
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Initial schema:
+
+```sql
+CREATE TABLE watchlist (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL DEFAULT 1,
+  anime_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_saved_anime (user_id, anime_id)
+);
+```
+
+Initial PHP API contract:
+
+```txt
+GET    /api/watchlist.php             Return saved AniList IDs for user 1
+POST   /api/watchlist.php             Insert an AniList ID
+DELETE /api/watchlist.php?anime_id=1  Remove an AniList ID
+```
+
+The frontend hook boundary is already suitable for this migration:
+`getWatchlist`, `addToWatchlist`, and `removeFromWatchlist` in
+`src/app/watchlist/lib/storage.ts` can be changed from `localStorage` calls to
+HTTP requests without rewriting the Discover or Watchlist components.

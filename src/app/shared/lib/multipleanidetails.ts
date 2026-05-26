@@ -1,31 +1,42 @@
-import { AnimeDetails } from "@/app/shared/types/animeDetails";
+import type { AnimeDetails } from '@/app/shared/types/animeDetails'
 
 export async function fetchMultipleDetails(ids: number[]): Promise<AnimeDetails[]> {
-  if (ids.length === 0) return [];
+  if (ids.length === 0) return []
 
   const fields = `
     id
     title { romaji }
     description
     averageScore
+    genres
+    episodes
+    format
     coverImage { medium large }
-  `;
+  `
 
   const query = `
     query (${ids.map((_, i) => `$id${i}: Int`).join(", ")}) {
       ${ids.map((_, i) => `anime${i}: Media(id: $id${i}) { ${fields} }`).join("\n")}
     }
-  `;
+  `
 
-  const variables = Object.fromEntries(ids.map((id, i) => [`id${i}`, id]));
+  const variables = Object.fromEntries(ids.map((id, i) => [`id${i}`, id]))
 
   const res = await fetch("/api/anilist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables }),
-  });
+  })
 
-  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(`AniList request failed: ${res.status}`)
+  }
 
-  return ids.map((_, i) => data.data[`anime${i}`]);
+  const data = await res.json()
+
+  if (data.errors) {
+    throw new Error(data.errors[0]?.message ?? 'AniList returned an error.')
+  }
+
+  return ids.map((_, i) => data.data[`anime${i}`])
 }

@@ -1,19 +1,18 @@
-import { removeFromWatchlist } from "../lib/storage"
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { removeFromWatchlist } from '../lib/storage'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-export function useRemoveFromWatchlist(options?: { onSettled?: () => void }){
-    const queryClient = useQueryClient();
+export function useRemoveFromWatchlist(options?: { onSettled?: () => void }) {
+  const queryClient = useQueryClient()
 
-    const{
-        mutate,
-        isPending,
-        error,
-    } = useMutation({
+  const { mutate, variables, isPending, error } = useMutation({
     mutationFn: removeFromWatchlist,
-    onSuccess: () => queryClient.invalidateQueries({queryKey: ["watchlist"]}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+    onSettled: options?.onSettled,
+  })
 
-    })
-
-    return {removeFromWatchlist: mutate, isPending,onSettled: options?.onSettled, error: error instanceof Error ? error.message : null}
-
+  return {
+    removeFromWatchlist: mutate,
+    removingId: isPending ? (variables ?? null) : null,
+    error: error instanceof Error ? error.message : null,
+  }
 }

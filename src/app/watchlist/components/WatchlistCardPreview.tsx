@@ -13,25 +13,31 @@ export function WatchlistCardPreview({
   onClick,
 }: WatchlistCardPreviewProps) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="relative w-40 h-40 rounded flex items-end overflow-hidden cursor-pointer transition-transform hover:scale-105"
+      className="group overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 text-left transition-colors hover:border-zinc-600"
     >
-      {animeDetails.coverImage?.medium && (
-        <Image
-          src={animeDetails.coverImage.medium}
-          alt={animeDetails.title.romaji}
-          fill
-          sizes="160px"
-          className="object-cover"
-        />
-      )}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/70 to-transparent" />
-      <div className="relative w-full p-2">
-        <p className="text-white text-sm font-bold leading-tight line-clamp-2 text-center">
+      <div className="relative aspect-[2/3] w-full overflow-hidden">
+        {animeDetails.coverImage.medium && (
+          <Image
+            src={animeDetails.coverImage.medium}
+            alt={animeDetails.title.romaji}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 180px"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        )}
+      </div>
+      <div className="p-3">
+        <p className="line-clamp-2 min-h-10 text-sm font-semibold leading-snug text-zinc-100">
           {animeDetails.title.romaji}
         </p>
+        <p className="mt-2 text-xs text-zinc-400">
+          {animeDetails.format?.replace('_', ' ') ?? 'Anime'}
+          {animeDetails.averageScore ? ` / Score ${animeDetails.averageScore}` : ''}
+        </p>
       </div>
-    </div>
+    </button>
   )
 }

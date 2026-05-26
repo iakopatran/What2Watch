@@ -9,13 +9,13 @@ export function SaveButton({ onClick, isPending, isSuccess }: SaveButtonProps) {
     <button
       onClick={onClick}
       disabled={isPending || isSuccess}
-      className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${
+      className={`min-h-10 w-full rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
         isSuccess
-          ? 'bg-emerald-600 text-white'
-          : 'bg-zinc-900 hover:bg-zinc-700 text-white'
+          ? 'bg-emerald-400/15 text-emerald-200'
+          : 'bg-zinc-100 text-zinc-950 hover:bg-white'
       }`}
     >
-      {isPending ? 'Saving...' : isSuccess ? 'Saved ✓' : 'Add to Watchlist'}
+      {isPending ? 'Saving...' : isSuccess ? 'Saved' : 'Save to watchlist'}
     </button>
   )
 }

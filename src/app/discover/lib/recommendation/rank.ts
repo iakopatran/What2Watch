@@ -12,9 +12,12 @@ export function rankAnime(
 ): ScoredAnime[] {
   return candidates
     .map((anime) => scoreAnime(anime, preferences))
-    .sort((left, right) => right.score - left.score)
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        (right.averageScore ?? 0) - (left.averageScore ?? 0) ||
+        (right.popularity ?? 0) - (left.popularity ?? 0) ||
+        left.id - right.id,
+    )
     .slice(0, limit)
 }
-
-// TODO: Once several anime can receive the same score, decide on a
-// deterministic tie-breaker such as average score or original fetch order.

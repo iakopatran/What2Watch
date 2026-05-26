@@ -1,12 +1,15 @@
 export type AnimeDetails = {
-  id: number;
+  id: number
   title: {
-    romaji: string;
-  };
-  description: string;
-  averageScore: number;
+    romaji: string
+  }
+  description: string | null
+  averageScore: number | null
+  genres: string[]
+  episodes: number | null
+  format: string | null
   coverImage: {
-    medium: string;
-    large: string;
-  };
-};
+    medium: string | null
+    large: string | null
+  }
+}

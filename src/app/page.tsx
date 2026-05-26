@@ -2,50 +2,45 @@
 
 import { useState } from 'react'
 
-import { useAnime } from '@/app/discover/hooks/useAnime'
-import { useDiscoverDetails } from '@/app/discover/hooks/useDiscoverDetails'
+import { useRecommendations } from '@/app/discover/hooks/useRecommendations'
 import { useAddToWatchlist } from '@/app/shared/hooks/useAddToWatchlist'
 import { useWatchlist } from '@/app/shared/hooks/useWatchlist'
-import { Mood } from '@/app/discover/types/mood'
-
-import MoodSelector from '@/app/discover/components/MoodSelector'
-import { DiscoverStack } from '@/app/discover/components/DiscoverStack'
+import {
+  defaultRecommendationPreferences,
+  type RecommendationPreferences,
+} from '@/app/discover/types/recommendation'
+import { RecommendationForm } from '@/app/discover/components/RecommendationForm'
+import { RecommendationResults } from '@/app/discover/components/RecommendationResults'
 
 export default function Home() {
-  const [mood, setMood] = useState<Mood | null>(null)
-
-  const { animeList, isLoading } = useAnime(mood)
-  const { details, isLoading: detailsLoading } = useDiscoverDetails(animeList.map(a => a.id))
+  const [preferences, setPreferences] =
+    useState<RecommendationPreferences>(defaultRecommendationPreferences)
+  const { recommendations, isLoading, isFetching, error } =
+    useRecommendations(preferences)
   const { addToWatchlist, savingId } = useAddToWatchlist()
   const { watchlist } = useWatchlist()
 
-  const isReady = mood !== null && !isLoading && !detailsLoading && details.length > 0
-
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen gap-6">
-      <div className="flex flex-col items-center gap-4">
-        <h1 className="text-3xl font-bold text-center">What should I watch tonight?</h1>
-        <MoodSelector
-          setMood={(m) => setMood(m)}
-          resetMood={() => setMood(null)}
-          mood={mood}
-        />
-      </div>
+    <main className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 lg:px-8">
+      <header className="mb-8 border-b border-zinc-800 pb-7">
+        <p className="text-xs font-semibold uppercase text-emerald-400">Discover</p>
+        <h1 className="mt-2 text-3xl font-semibold text-zinc-50 sm:text-4xl">
+          Find tonight&apos;s anime
+        </h1>
+      </header>
 
-      {mood && (isLoading || detailsLoading) && (
-        <p className="text-sm text-zinc-400">Loading...</p>
-      )}
-
-      {isReady && (
-        <DiscoverStack
-          key={mood}
-          details={details}
+      <div className="grid items-start gap-6 lg:grid-cols-[360px_1fr]">
+        <RecommendationForm onSubmit={setPreferences} isFetching={isFetching} />
+        <RecommendationResults
+          recommendations={recommendations}
           onSave={addToWatchlist}
-          onClose={() => setMood(null)}
           savingId={savingId}
           watchlist={watchlist ?? []}
+          hasSearched
+          isLoading={isLoading}
+          error={error}
         />
-      )}
+      </div>
     </main>
   )
 }

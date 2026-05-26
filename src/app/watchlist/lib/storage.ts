@@ -1,6 +1,4 @@
 export async function getWatchlist(): Promise<number[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
   try {
     const raw = localStorage.getItem("watchlist");
 
@@ -19,8 +17,6 @@ export async function getWatchlist(): Promise<number[]> {
 }
 
 export async function addToWatchlist(id: number): Promise<number[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
   try {
     if (typeof id !== "number" || Number.isNaN(id)) {
       throw new Error("Invalid anime ID");
@@ -44,8 +40,6 @@ export async function addToWatchlist(id: number): Promise<number[]> {
 }
 
 export async function removeFromWatchlist(id: number): Promise<number[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
   try {
     if (typeof id !== "number" || Number.isNaN(id)) {
       throw new Error("Invalid anime ID");

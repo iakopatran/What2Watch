@@ -1,57 +1,10 @@
 'use client'
 
+import { useEffect } from 'react'
 import Image from 'next/image'
-import { useState } from 'react'
-import { AnimeDetails } from '@/app/shared/types/animeDetails'
-import { RemoveButton } from './RemoveButton'
+import type { AnimeDetails } from '@/app/shared/types/animeDetails'
 import { stripHtml } from '@/app/shared/lib/stripHtml'
-
-function StarRating() {
-  const [rating, setRating] = useState(0)
-  const [hovered, setHovered] = useState(0)
-
-  return (
-    <div className="pt-4 pb-1">
-      <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-2">Your Rating</p>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => setRating(star === rating ? 0 : star)}
-            onMouseEnter={() => setHovered(star)}
-            onMouseLeave={() => setHovered(0)}
-            className={`text-2xl transition-colors ${
-              star <= (hovered || rating) ? 'text-amber-400' : 'text-zinc-600'
-            }`}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-type AccordionItemProps = {
-  label: string
-  children: React.ReactNode
-}
-
-function AccordionItem({ label, children }: AccordionItemProps) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex justify-between items-center py-2.5 border-b border-zinc-700 text-zinc-300 text-sm font-medium hover:text-white transition-colors"
-      >
-        <span>{label}</span>
-        <span className="text-zinc-500 text-xs">{open ? '▾' : '▸'}</span>
-      </button>
-      {open && <div className="py-3">{children}</div>}
-    </div>
-  )
-}
+import { RemoveButton } from './RemoveButton'
 
 type WatchlistCardProps = {
   animeDetails: AnimeDetails
@@ -66,55 +19,94 @@ export function WatchlistCard({
   onRemove,
   isRemoving,
 }: WatchlistCardProps) {
-  const description = stripHtml(animeDetails.description)
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  const description = animeDetails.description
+    ? stripHtml(animeDetails.description)
+    : 'No description available.'
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div
-        className="bg-zinc-900 rounded-2xl overflow-hidden max-w-xl w-full mx-4 flex flex-row shadow-2xl h-96"
-        onClick={(e) => e.stopPropagation()}
+      <article
+        role="dialog"
+        aria-modal="true"
+        aria-label={animeDetails.title.romaji}
+        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-2xl sm:flex-row"
+        onClick={(event) => event.stopPropagation()}
       >
-        {animeDetails.coverImage?.large && (
-          <div className="relative w-52 shrink-0">
+        <div className="relative h-52 w-full shrink-0 sm:h-auto sm:w-64">
+          {animeDetails.coverImage.large && (
             <Image
               src={animeDetails.coverImage.large}
               alt={animeDetails.title.romaji}
               fill
-              sizes="208px"
+              sizes="(max-width: 640px) 100vw, 256px"
               className="object-cover"
             />
-          </div>
-        )}
-        <div className="flex flex-col p-5 flex-1 min-w-0">
-          <h2 className="text-white text-lg font-bold leading-tight">{animeDetails.title.romaji}</h2>
-          <span className="inline-flex items-center gap-1 bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full self-start mt-2">
-            ★ {animeDetails.averageScore}
-          </span>
+          )}
+        </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto mt-4">
-            <AccordionItem label="Description">
-              <p className="text-zinc-400 text-sm leading-relaxed">{description}</p>
-            </AccordionItem>
-            <AccordionItem label="Notes">
-              <p className="text-zinc-500 text-sm italic">No notes added.</p>
-            </AccordionItem>
-            <StarRating />
-          </div>
-
-          <div className="flex gap-2 mt-3">
-            <RemoveButton onClick={onRemove} isPending={isRemoving} />
+        <div className="flex min-h-0 flex-1 flex-col p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-xl font-semibold leading-snug text-zinc-50">
+              {animeDetails.title.romaji}
+            </h2>
             <button
+              type="button"
               onClick={onClose}
-              className="flex-1 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="shrink-0 text-sm text-zinc-400 hover:text-zinc-100"
             >
               Close
             </button>
           </div>
+
+          <p className="mt-3 text-sm text-zinc-400">
+            {animeDetails.format?.replace('_', ' ') ?? 'Anime'}
+            {animeDetails.episodes ? ` / ${animeDetails.episodes} eps` : ''}
+            {animeDetails.averageScore
+              ? ` / Score ${animeDetails.averageScore}`
+              : ''}
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {animeDetails.genres.map((genre) => (
+              <span
+                key={genre}
+                className="rounded bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-5 min-h-0 flex-1 overflow-y-auto border-t border-zinc-800 pt-4">
+            <p className="text-sm leading-relaxed text-zinc-300">{description}</p>
+          </div>
+
+          <div className="mt-6 flex gap-3 border-t border-zinc-800 pt-4">
+            <RemoveButton onClick={onRemove} isPending={isRemoving} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-10 flex-1 rounded-md bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-700"
+            >
+              Keep saved
+            </button>
+          </div>
         </div>
-      </div>
+      </article>
     </div>
   )
 }

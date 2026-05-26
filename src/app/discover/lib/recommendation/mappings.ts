@@ -23,10 +23,11 @@ export const moodSignals: Record<Mood, MoodSignals> = {
     preferredGenres: ['Psychological', 'Thriller', 'Horror'],
     preferredTags: ['Revenge', 'Survival'],
   },
+  emotional: {
+    preferredGenres: ['Drama', 'Romance'],
+    preferredTags: ['Tragedy', 'Family Life'],
+  },
 }
-
-// TODO: Add an emotional profile after `emotional` is added to the existing
-// Mood type and current mood-only fetch path is migrated.
 
 export type EpisodeRange = {
   min?: number
@@ -83,5 +84,3 @@ export const discoveryStyleRules: Record<
     popularityPreference: 'ignore',
   },
 }
-
-// TODO: Tune these profiles after you have scored a few example anime by hand.

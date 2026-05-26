@@ -12,14 +12,21 @@ export const discoveryStyles = [
 export type DiscoveryStyle = (typeof discoveryStyles)[number]
 
 export type RecommendationPreferences = {
-  // TODO: Add "emotional" to Mood when the questionnaire replaces the current
-  // mood-only discover flow and its existing AniList genre map is updated.
   mood: Mood
   timeCommitment: TimeCommitment
   discoveryStyle: DiscoveryStyle
   includeGenres: string[]
   avoidGenres: string[]
   avoidTags: string[]
+}
+
+export const defaultRecommendationPreferences: RecommendationPreferences = {
+  mood: 'hype',
+  timeCommitment: 'quick',
+  discoveryStyle: 'highRated',
+  includeGenres: [],
+  avoidGenres: [],
+  avoidTags: [],
 }
 
 export type CandidateFormat =
@@ -33,8 +40,8 @@ export type CandidateFormat =
 
 export type CandidateTag = {
   name: string
-  rank: number
-  isMediaSpoiler: boolean
+  rank: number | null
+  isMediaSpoiler: boolean | null
 }
 
 export type CandidateAnime = {
@@ -42,6 +49,7 @@ export type CandidateAnime = {
   title: {
     romaji: string
   }
+  description: string | null
   genres: string[]
   tags: CandidateTag[]
   averageScore: number | null
