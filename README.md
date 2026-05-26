@@ -9,8 +9,8 @@ TanStack Query, Tailwind CSS, and the AniList GraphQL API.
   and content-avoidance preferences.
 - Deterministic recommendation scoring with visible match reasons.
 - Ranked AniList results with save-to-watchlist actions.
-- Watchlist grid and detail view backed by browser storage for the current
-  frontend milestone.
+- Watchlist grid and detail view backed by PHP and MySQL in the AWS
+  deployment, with browser storage available for unconfigured local work.
 
 ## Local Development
 
@@ -20,6 +20,13 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+Without a configured PHP endpoint, local development stores watchlist IDs in
+browser `localStorage`. To use an available PHP endpoint, build or run with:
+
+```bash
+NEXT_PUBLIC_WATCHLIST_API_URL=/php-api/watchlist.php npm run build
+```
 
 Validation:
 
@@ -43,18 +50,24 @@ Candidate retrieval stays broad. The local scoring layer ranks candidates using
 mood matches, watch-time fit, discovery style, preferred genres, avoided
 genres/tags, and community score.
 
-## PHP, MySQL, And AWS Plan
+## PHP, MySQL, And AWS Deployment
 
-The next integration milestone replaces browser watchlist storage with one-user
-server persistence:
+The submission architecture uses one-user server persistence:
 
 ```txt
-Next.js frontend
--> PHP JSON endpoint hosted on AWS Lightsail LAMP
--> MariaDB/MySQL watchlist table
+Browser
+-> Apache on Amazon EC2
+   -> Next.js server on localhost:3000 for UI and /api/anilist
+   -> PHP JSON endpoint at /php-api/watchlist.php
+-> Amazon RDS for MySQL, private access from EC2 only
 ```
 
-Initial schema:
+The RDS database is MySQL `8.4`, configured with public access disabled and a
+security group rule permitting port `3306` only from the EC2 application
+security group. PHP connects over TLS using the restricted `what2watch_app`
+database user.
+
+Schema:
 
 ```sql
 CREATE TABLE watchlist (
@@ -66,15 +79,20 @@ CREATE TABLE watchlist (
 );
 ```
 
-Initial PHP API contract:
+PHP API contract:
 
 ```txt
-GET    /api/watchlist.php             Return saved AniList IDs for user 1
-POST   /api/watchlist.php             Insert an AniList ID
-DELETE /api/watchlist.php?anime_id=1  Remove an AniList ID
+GET    /php-api/watchlist.php             Return saved AniList IDs for user 1
+POST   /php-api/watchlist.php             Insert an AniList ID
+DELETE /php-api/watchlist.php?anime_id=1  Remove an AniList ID
 ```
 
-The frontend hook boundary is already suitable for this migration:
-`getWatchlist`, `addToWatchlist`, and `removeFromWatchlist` in
-`src/app/watchlist/lib/storage.ts` can be changed from `localStorage` calls to
-HTTP requests without rewriting the Discover or Watchlist components.
+The frontend persistence boundary is implemented in
+`src/app/watchlist/lib/storage.ts`: setting `NEXT_PUBLIC_WATCHLIST_API_URL`
+switches the existing Discover and Watchlist components to the PHP API without
+component changes.
+
+The deployable PHP endpoint, SQL schema, protected configuration template, and
+Apache proxy setup are documented in `backend/README.md`. A production
+`systemd` unit for the Next.js server is included in
+`deploy/systemd/what2watch.service`.
