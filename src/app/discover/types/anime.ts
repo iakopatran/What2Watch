@@ -3,4 +3,5 @@ export type Anime = {
   title: {
     romaji: string
   }
+
 }

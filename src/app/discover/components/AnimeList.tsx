@@ -1,3 +1,6 @@
+// DEPRECATED: Was used in the original list-based discover flow where users picked
+// from a scrollable list then navigated to a detail view. Replaced by DiscoverStack.tsx,
+// which renders an all-in-one card carousel with details and save inline.
 import { Anime } from '../types/anime'
 import ResultCard from './ResultCard'
 type AnimeListProps = {

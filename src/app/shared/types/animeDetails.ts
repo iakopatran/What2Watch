@@ -5,4 +5,8 @@ export type AnimeDetails = {
   };
   description: string;
   averageScore: number;
+  coverImage: {
+    medium: string;
+    large: string;
+  };
 };

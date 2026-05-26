@@ -1,5 +1,5 @@
-import { fetchAnimeByMood } from "@/app/lib/anilist"
-import { Mood } from "@/app/types/mood"
+import { fetchAnimeByMood } from "../lib/anilist"
+import { Mood } from "../types/mood"
 import {
   useQuery
 } from '@tanstack/react-query'

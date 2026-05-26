@@ -2,68 +2,49 @@
 
 import { useState } from 'react'
 
-import { useAnime } from '@/app/hooks/useAnime'
-import { useAnimeDetails } from '@/app/hooks/useAnimeDetails'
-import { Mood } from '@/app/types/mood'
+import { useAnime } from '@/app/discover/hooks/useAnime'
+import { useDiscoverDetails } from '@/app/discover/hooks/useDiscoverDetails'
+import { useAddToWatchlist } from '@/app/shared/hooks/useAddToWatchlist'
+import { useWatchlist } from '@/app/shared/hooks/useWatchlist'
+import { Mood } from '@/app/discover/types/mood'
 
-import MoodSelector from '@/app/components/MoodSelector'
-import DetailCard from '@/app/components/DetailCard'
-import AnimeList from './components/AnimeList'
+import MoodSelector from '@/app/discover/components/MoodSelector'
+import { DiscoverStack } from '@/app/discover/components/DiscoverStack'
 
 export default function Home() {
   const [mood, setMood] = useState<Mood | null>(null)
-  const [selectedAnime, setSelectedAnime] = useState<number | null>(null)
-  const resetMood = () => setMood(null)
 
-  //Hooks
-  const { animeList, isLoading, isFetching, error } = useAnime(mood)
-  const {
-    animeDetails: animeDetails,
-    isLoading: detailsLoading,
-    error: detailsError,
-  } = useAnimeDetails(selectedAnime)
+  const { animeList, isLoading } = useAnime(mood)
+  const { details, isLoading: detailsLoading } = useDiscoverDetails(animeList.map(a => a.id))
+  const { addToWatchlist, savingId } = useAddToWatchlist()
+  const { watchlist } = useWatchlist()
 
-  const handleMoodSelect = (m: Mood) => {
-    setMood(m)
-  }
+  const isReady = mood !== null && !isLoading && !detailsLoading && details.length > 0
 
-  console.log('effect:', selectedAnime)
-
-  return selectedAnime !== null ? (
-    <DetailCard
-      animeDetails={animeDetails}
-      loading={detailsLoading}
-      error={detailsError}
-      onBack={() => setSelectedAnime(null)}
-    />
-  ) : (
+  return (
     <main className="flex flex-col items-center justify-center min-h-screen gap-6">
       <div className="flex flex-col items-center gap-4">
-        <h1 className="text-3xl font-bold text-center">
-          What should I watch tonight?
-        </h1>
-
+        <h1 className="text-3xl font-bold text-center">What should I watch tonight?</h1>
         <MoodSelector
-          setMood={handleMoodSelect}
-          resetMood={resetMood}
+          setMood={(m) => setMood(m)}
+          resetMood={() => setMood(null)}
           mood={mood}
         />
       </div>
 
-      {mood && (
-        <AnimeList
-          animeList={animeList}
-          loading={isLoading}
-          error={error}
-          onSelect={setSelectedAnime}
-        />
-      )}
-      {isFetching && !isLoading && (
-        <div className="text-sm text-gray-400">Updating...</div>
+      {mood && (isLoading || detailsLoading) && (
+        <p className="text-sm text-zinc-400">Loading...</p>
       )}
 
-      {mood && !isLoading && !error && animeList.length === 0 && (
-        <div>No results found</div>
+      {isReady && (
+        <DiscoverStack
+          key={mood}
+          details={details}
+          onSave={addToWatchlist}
+          onClose={() => setMood(null)}
+          savingId={savingId}
+          watchlist={watchlist ?? []}
+        />
       )}
     </main>
   )

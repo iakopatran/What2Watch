@@ -1,12 +1,12 @@
-import { Anime } from "@/app/types/anime";
-import { Mood } from '@/app/types/mood'
+import { Anime } from "../types/anime";
+import { Mood } from '../types/mood'
 
 export async function fetchAnimeByMood(mood: Mood): Promise<Anime[]> {
   const query = `
     query ($genre: String) {
       Page(perPage: 5) {
         media(genre_in: [$genre], type: ANIME) {
-        id
+          id
           title {
             romaji
           }
@@ -22,7 +22,7 @@ const genreMap: Record<Mood, string> = {
   dark: "Psychological",
 };
 
-  const res = await fetch("https://graphql.anilist.co", {
+  const res = await fetch("/api/anilist", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

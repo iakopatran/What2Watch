@@ -1,4 +1,4 @@
-import { moods, Mood } from '@/app/types/mood'
+import { moods, Mood } from '../types/mood'
 
 type MoodSelectorProps = {
   setMood: (mood: Mood) => void

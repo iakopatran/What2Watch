@@ -1,18 +1,26 @@
-import { AnimeDetails } from "../types/animeDetails";
+// DEPRECATED: Fetched a single anime's details with one GraphQL query per call.
+// Replaced by multipleanidetails.ts, which batches all IDs into a single query
+// to avoid N individual requests.
+import { AnimeDetails } from "@/app/shared/types/animeDetails";
 
 export async function fetchDetails(selectedAnime: number): Promise<AnimeDetails> {
   const query = `
     query ($id: Int) {
       Media(id: $id) {
+        id
         title {
           romaji
-              }
+        }
         description
         averageScore
+        coverImage {
+          medium
+          large
         }
       }
+    }
   `;
-  const res = await fetch("https://graphql.anilist.co", {
+const res = await fetch("/api/anilist", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,15 +31,7 @@ export async function fetchDetails(selectedAnime: number): Promise<AnimeDetails>
     }),
   });
 
-  if (!res.ok) {
-    throw new Error(`HTTP error: ${res.status}`);
-  }
-
   const data = await res.json();
-
-  if (data.errors) {
-    throw new Error("GraphQL error");
-  }
 
   return data.data.Media;
 }
