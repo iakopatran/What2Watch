@@ -96,3 +96,7 @@ The deployable PHP endpoint, SQL schema, protected configuration template, and
 Apache proxy setup are documented in `backend/README.md`. A production
 `systemd` unit for the Next.js server is included in
 `deploy/systemd/what2watch.service`.
+
+For a detailed class presentation walkthrough of the AWS services, security
+configuration, EC2 software, PHP/MySQL implementation, and protected
+credentials/files, see `docs/DEPLOYMENT_WRITEUP.md`.
